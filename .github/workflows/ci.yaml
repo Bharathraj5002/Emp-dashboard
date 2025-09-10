@@ -37,7 +37,8 @@ jobs:
     - name: Wait for MySQL
       run: |
         echo "Waiting for MySQL service..."
-        until mysqladmin ping -hmysql -uroot -proot --silent; do
+        export MYSQL_PWD=root
+        until mysqladmin ping -hmysql -uroot --silent --protocol=tcp; do
           echo "MySQL not ready yet..."
           sleep 5
         done
@@ -97,10 +98,18 @@ jobs:
       run: |
         docker compose up -d
         echo "Waiting for services to be ready..."
-        sleep 30
-        curl -f http://localhost:8080/actuator/health || exit 1
-        curl -f http://localhost:4200 || exit 1
+        # Wait for backend and frontend health
+        until curl -sf http://localhost:8080/actuator/health; do
+          echo "Backend not ready..."
+          sleep 5
+        done
+        until curl -sf http://localhost:4200; do
+          echo "Frontend not ready..."
+          sleep 5
+        done
+        echo "Services are ready!"
         docker compose down
+
 
 
     # # ---------- FRONTEND (Angular) ----------
