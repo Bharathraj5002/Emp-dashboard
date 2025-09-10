@@ -1,0 +1,68 @@
+# ======================
+# Root & Common
+# ======================
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor specific files
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Node + Java build outputs
+node_modules/
+dist/
+target/
+build/
+
+# OS specific
+ehthumbs.db
+desktop.ini
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# ======================
+# Spring Boot (Maven)
+# ======================
+springboot-backend/target/
+springboot-backend/.classpath
+springboot-backend/.project
+springboot-backend/.settings/
+springboot-backend/.mvn/wrapper/maven-wrapper.jar
+springboot-backend/.mvn/wrapper/MavenWrapperDownloader.java
+
+# ======================
+# Angular
+# ======================
+angular-frontend/node_modules/
+angular-frontend/dist/
+angular-frontend/tmp/
+angular-frontend/out-tsc/
+angular-frontend/.angular/cache/
+.angular/
+
+# Angular test coverage
+angular-frontend/coverage/
+
+# npm & yarn
+angular-frontend/yarn.lock
+
+# ======================
+# Environment / Secrets
+# ======================
+*.env
+*.local
+*.secret
+*.credentials
+.env.*
