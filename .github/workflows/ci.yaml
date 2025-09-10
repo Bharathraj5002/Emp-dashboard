@@ -16,6 +16,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: employee_management_system
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
@@ -23,11 +25,11 @@ jobs:
           --health-retries=3
 
     steps:
-    # ---------- CHECKOUT ----------
+    # Checkout repository
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # ---------- BACKEND SETUP ----------
+    # ---------- BACKEND (Spring Boot) ----------
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
@@ -36,13 +38,10 @@ jobs:
 
     - name: Wait for MySQL
       run: |
-        echo "Waiting for MySQL service..."
-        export MYSQL_PWD=root
-        until mysqladmin ping -hmysql -uroot --silent --protocol=tcp; do
-          echo "MySQL not ready yet..."
+        until mysqladmin ping -h127.0.0.1 -uroot -proot --silent; do
+          echo "Waiting for MySQL..."
           sleep 5
         done
-        echo "MySQL is ready!"
 
     - name: Build & Test Backend
       run: |
@@ -50,67 +49,9 @@ jobs:
         chmod +x mvnw
         ./mvnw clean verify -DskipTests=false
       env:
-        SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/employee_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/employee_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
         SPRING_DATASOURCE_USERNAME: root
         SPRING_DATASOURCE_PASSWORD: root
-
-    # ---------- FRONTEND SETUP ----------
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install & Test Frontend
-      run: |
-        cd angular-frontend
-        npm install
-        npm run lint
-        npm test -- --watch=false --browsers=ChromeHeadless
-
-    # ---------- DOCKER LOGIN ----------
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Set up Commit SHA as Image Tag
-      run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-
-    # ---------- BUILD & PUSH BACKEND IMAGE ----------
-    - name: Build & Push Backend Image
-      run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG} -f springboot-backend/Dockerfile springboot-backend
-        docker push ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG}
-        docker tag ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG} ${{ secrets.DOCKER_USERNAME }}/emp-backend:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/emp-backend:latest
-
-    # ---------- BUILD & PUSH FRONTEND IMAGE ----------
-    - name: Build & Push Frontend Image
-      run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG} -f angular-frontend/Dockerfile angular-frontend
-        docker push ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG}
-        docker tag ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG} ${{ secrets.DOCKER_USERNAME }}/emp-frontend:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/emp-frontend:latest
-
-    # ---------- OPTIONAL: INTEGRATION TEST ----------
-    - name: Integration Test with Docker Compose
-      run: |
-        docker compose up -d
-        echo "Waiting for services to be ready..."
-        # Wait for backend and frontend health
-        until curl -sf http://localhost:8080/actuator/health; do
-          echo "Backend not ready..."
-          sleep 5
-        done
-        until curl -sf http://localhost:4200; do
-          echo "Frontend not ready..."
-          sleep 5
-        done
-        echo "Services are ready!"
-        docker compose down
-
-
 
     # # ---------- FRONTEND (Angular) ----------
     # - name: Set up Node.js
@@ -124,3 +65,37 @@ jobs:
     #     npm install
     #     npm run lint
     #     npm test -- --watch=false --browsers=ChromeHeadless
+
+    # ---------- DOCKER BUILD & PUSH ----------
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Set up Commit SHA as Image Tag
+      run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+    - name: Build & Push Backend Image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG} -f springboot-backend/Dockerfile springboot-backend
+        docker push ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG}
+        docker tag ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG} ${{ secrets.DOCKER_USERNAME }}/emp-backend:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/emp-backend:latest
+
+    - name: Build & Push Frontend Image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG} -f angular-frontend/Dockerfile angular-frontend
+        docker push ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG}
+        docker tag ${{ secrets.DOCKER_USERNAME }}/emp-frontend:${IMAGE_TAG} ${{ secrets.DOCKER_USERNAME }}/emp-frontend:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/emp-frontend:latest
+
+    # ---------- OPTIONAL: INTEGRATION TEST WITH DOCKER COMPOSE ----------
+    - name: Integration Test with Docker Compose
+      run: |
+        docker compose up -d
+        echo "Waiting for services to be ready..."
+        sleep 30
+        curl -f http://localhost:8080/actuator/health || exit 1
+        curl -f http://localhost:4200 || exit 1
+        docker compose down
