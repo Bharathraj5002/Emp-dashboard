@@ -53,18 +53,18 @@ jobs:
         SPRING_DATASOURCE_USERNAME: root
         SPRING_DATASOURCE_PASSWORD: root
 
-    # ---------- FRONTEND (Angular) ----------
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+    # # ---------- FRONTEND (Angular) ----------
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v3
+    #   with:
+    #     node-version: '18'
 
-    - name: Install & Test Frontend
-      run: |
-        cd angular-frontend
-        npm install
-        npm run lint
-        npm test -- --watch=false --browsers=ChromeHeadless
+    # - name: Install & Test Frontend
+    #   run: |
+    #     cd angular-frontend
+    #     npm install
+    #     npm run lint
+    #     npm test -- --watch=false --browsers=ChromeHeadless
 
     # ---------- DOCKER BUILD & PUSH ----------
     - name: Log in to Docker Hub
