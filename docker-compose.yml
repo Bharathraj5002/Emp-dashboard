@@ -15,8 +15,8 @@ services:
       - mysql-data:/var/lib/mysql   # <--- Persist data here
 
   backend:
-    # build: ./springboot-backend
-    image: bharathraj5002/emp-backend:latest
+    build: ./springboot-backend
+    # image: bharathraj5002/emp-backend:latest
     container_name: springboot-backend
     ports:
       - "8080:8080"
@@ -30,8 +30,8 @@ services:
       - app-network
 
   frontend:
-    # build: ./angular-frontend
-    image: bharathraj5002/emp-frontend:latest
+    build: ./angular-frontend
+    # image: bharathraj5002/emp-frontend:latest
     container_name: angular-frontend
     ports:
       - "4200:80"
