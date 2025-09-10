@@ -87,14 +87,14 @@ jobs:
 
     - name: Set up Commit SHA as Image Tag
       run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-      
+
     # ---------- OPTIONAL: INTEGRATION TEST WITH DOCKER COMPOSE ----------
     - name: Integration Test with Docker Compose
       run: |
         docker compose up -d
         echo "Waiting for backend service..."
         for i in {1..40}; do
-          if curl -s http://localhost:8080/actuator/health; then
+          if curl -s http://localhost:8080; then
             echo "Backend is ready"
             break
           fi
