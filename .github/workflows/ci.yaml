@@ -87,16 +87,32 @@ jobs:
 
     - name: Set up Commit SHA as Image Tag
       run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+      
     # ---------- OPTIONAL: INTEGRATION TEST WITH DOCKER COMPOSE ----------
     - name: Integration Test with Docker Compose
       run: |
         docker compose up -d
-        echo "Waiting for services to be ready..."
-        sleep 30
-        curl -f http://localhost:8080/actuator/health || exit 1
-        curl -f http://localhost:4200 || exit 1
-        docker compose down
+        echo "Waiting for backend service..."
+        for i in {1..40}; do
+          if curl -s http://localhost:8080/actuator/health; then
+            echo "Backend is ready"
+            break
+          fi
+          echo "Waiting... ($i/40)"
+          sleep 5
+        done
 
+        echo "Checking frontend..."
+        for i in {1..20}; do
+          if curl -s http://localhost:4200; then
+            echo "Frontend is ready"
+            break
+          fi
+          echo "Waiting for frontend... ($i/20)"
+          sleep 5
+        done
+
+        docker compose down
     - name: Build & Push Backend Image
       run: |
         docker build -t ${{ secrets.DOCKER_USERNAME }}/emp-backend:${IMAGE_TAG} -f springboot-backend/Dockerfile springboot-backend
