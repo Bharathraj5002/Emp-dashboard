@@ -99,6 +99,7 @@ jobs:
             break
           fi
           echo "Waiting... ($i/40)"
+          docker ps -a
           sleep 5
         done
 
