@@ -16,8 +16,7 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: employee_management_system
-        ports:
-          - 3306:3306
+        # remove ports mapping to avoid conflicts
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
@@ -25,7 +24,6 @@ jobs:
           --health-retries=3
 
     steps:
-    # Checkout repository
     - name: Checkout Code
       uses: actions/checkout@v3
 
@@ -65,7 +63,6 @@ jobs:
     #     npm install
     #     npm run lint
     #     npm test -- --watch=false --browsers=ChromeHeadless
-
     # ---------- DOCKER BUILD & PUSH ----------
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
@@ -99,3 +96,8 @@ jobs:
         curl -f http://localhost:8080/actuator/health || exit 1
         curl -f http://localhost:4200 || exit 1
         docker compose down
+
+
+
+
+        
